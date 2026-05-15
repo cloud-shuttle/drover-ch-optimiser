@@ -40,6 +40,9 @@ Thumbs.db
 # MkDocs site build
 /site/
 
+# Release cross-compile output
+/dist/
+
 # Secrets — never commit real connection config
 .drover/ch-optimiser.yaml
 .env

@@ -6,6 +6,18 @@ builds:
   - id: drover-ch
     main: ./cmd/drover-ch
     binary: drover-ch
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
   - id: drover-ch-mcp
     main: ./cmd/drover-ch-mcp
     binary: drover-ch-mcp
@@ -20,7 +32,6 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X main.version={{.Version}}
 
 archives:
   - id: default
@@ -37,15 +48,12 @@ checksum:
   name_template: "checksums.txt"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  disable: true
 
 release:
   github:
     owner: cloud-shuttle
     name: drover-ch-optimiser
   draft: false
-  prerelease: auto
+  prerelease: false
+  mode: append

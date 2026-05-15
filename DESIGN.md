@@ -312,7 +312,7 @@ Environment overrides: `CLICKHOUSE_HOST`, `CLICKHOUSE_PASSWORD`, etc.
 | Agent command | `.drover/commands/clickhouse-audit.md` |
 | `drover-code` | Shell tool / JSON parse of `audit -f json` |
 | Telemetry | Optional: emit run metadata to team ClickHouse |
-| MCP (future) | `audit` as MCP tool for schema reasoning |
+| MCP | `drover-ch-mcp` — `clickhouse_audit` tool (stdio JSON-RPC); see `docs/roadmap/v1.1.md` |
 
 ---
 

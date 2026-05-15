@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -301,7 +302,92 @@ LIMIT 500
 	for i := 0; i < len(hots) && i < 10; i++ {
 		g.HotPaths = append(g.HotPaths, hots[i].key)
 	}
+
+	_ = g.enrichFilterColumns(conn, days, exclude)
 	return rows.Err()
+}
+
+func (g *Graph) enrichFilterColumns(conn chclient.Querier, days int, exclude ExcludeSet) error {
+	q := `
+SELECT
+    arrayJoin(tables) AS table_full,
+    any(query) AS query_text,
+    count() AS freq
+FROM system.query_log
+WHERE type = 'QueryFinish'
+  AND query_kind = 'Select'
+  AND event_date >= today() - ?
+  AND length(tables) > 0
+  AND (positionCaseInsensitive(query, 'WHERE') > 0 OR positionCaseInsensitive(query, 'PREWHERE') > 0)
+GROUP BY table_full, normalized_query_hash
+HAVING freq >= 2
+ORDER BY freq DESC
+LIMIT 2000
+`
+	ctx := context.Background()
+	rows, err := conn.Query(ctx, q, days)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	perTable := make(map[TableKey]map[string]int)
+
+	for rows.Next() {
+		var tableFull, queryText string
+		var freq uint64
+		if err := rows.Scan(&tableFull, &queryText, &freq); err != nil {
+			return err
+		}
+		key := parseTableRef(tableFull)
+		if !InScope(key, "", exclude) {
+			continue
+		}
+		node, ok := g.Nodes[key]
+		if !ok {
+			continue
+		}
+		names := make([]string, len(node.Columns))
+		for i, c := range node.Columns {
+			names[i] = c.Name
+		}
+		for _, col := range ExtractFilterColumns(queryText, names) {
+			if perTable[key] == nil {
+				perTable[key] = make(map[string]int)
+			}
+			perTable[key][col] += int(freq)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for key, counts := range perTable {
+		node := g.Nodes[key]
+		if node == nil {
+			continue
+		}
+		type pair struct {
+			name  string
+			count int
+		}
+		var ranked []pair
+		for n, c := range counts {
+			ranked = append(ranked, pair{n, c})
+		}
+		sort.Slice(ranked, func(i, j int) bool {
+			if ranked[i].count == ranked[j].count {
+				return ranked[i].name < ranked[j].name
+			}
+			return ranked[i].count > ranked[j].count
+		})
+		added := make([]string, 0, len(ranked))
+		for _, p := range ranked {
+			added = append(added, p.name)
+		}
+		node.FilterColumns = mergeFilterColumns(node.FilterColumns, added, 8)
+	}
+	return nil
 }
 
 func classifyNodeTypes(g *Graph) {

@@ -98,3 +98,14 @@ rules:
       type: too_many_parts
       message_template: "{{.Count}} active parts (threshold {{.Threshold}})"
     suggestion: "Increase batch size, tune merge settings, or run OPTIMIZE during maintenance."
+
+  - id: schema-wide-table
+    category: schema
+    name: Wide Table (Too Many Columns)
+    severity: medium
+    impact: 6
+    description: Very wide tables increase memory and merge cost
+    condition:
+      type: too_many_columns
+      message_template: "{{.Count}} columns (recommended max {{.Threshold}})"
+    suggestion: "Split into satellite tables, use Nested/JSON sparingly, or project only needed columns in MVs."

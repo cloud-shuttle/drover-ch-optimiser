@@ -56,6 +56,8 @@ nav:
       - Rules catalog: reference/rules-catalog.md
       - Configuration: reference/configuration.md
       - Output formats: reference/output-formats.md
+  - Roadmap:
+      - v1.1: roadmap/v1.1.md
   - Explanation:
       - Architecture: explanation/architecture.md
       - Best-practices philosophy: explanation/best-practices-philosophy.md

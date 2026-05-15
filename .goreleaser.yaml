@@ -6,6 +6,9 @@ builds:
   - id: drover-ch
     main: ./cmd/drover-ch
     binary: drover-ch
+  - id: drover-ch-mcp
+    main: ./cmd/drover-ch-mcp
+    binary: drover-ch-mcp
     env:
       - CGO_ENABLED=0
     goos:

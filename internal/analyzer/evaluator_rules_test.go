@@ -81,7 +81,7 @@ func TestEveryRuleHasHandler(t *testing.T) {
 		"string_abuse": true, "missing_lowcardinality": true,
 		"excessive_nullable": true, "partition_cardinality": true,
 		"missing_skipping_index": true, "mutation_heavy": true,
-		"too_many_parts": true,
+		"too_many_parts": true, "too_many_columns": true,
 	}
 	for _, r := range rules {
 		if !known[r.Condition.Type] {

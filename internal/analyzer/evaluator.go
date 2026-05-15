@@ -232,6 +232,13 @@ func evaluateRule(rule Rule, tbl *graph.Table, g *graph.Graph) *OptimizationIssu
 				"Threshold": "150",
 			})
 		}
+	case "too_many_columns":
+		if n := len(tbl.Columns); n > 80 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count":     fmt.Sprintf("%d", n),
+				"Threshold": "80",
+			})
+		}
 	default:
 		return nil
 	}

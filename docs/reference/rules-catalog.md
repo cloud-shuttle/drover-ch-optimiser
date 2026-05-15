@@ -19,6 +19,7 @@ drover-ch rules
 | `schema-types-avoid-nullable` | high | 7 | Nullable overhead | Prefer DEFAULT |
 | `schema-partition-low-cardinality` | high | 8 | ~100–1k partitions target | `toYYYYMM` / `toDate` |
 | `schema-parts-too-many-active` | high | 8 | Too many active parts | Batch inserts, merges, OPTIMIZE |
+| `schema-wide-table` | medium | 6 | >80 columns | Split / project columns |
 
 ## Query
 
@@ -37,14 +38,15 @@ drover-ch rules
 | Type | Used by |
 |------|---------|
 | `sorting_key_cardinality` | PK order |
-| `missing_filter_in_pk` | Filter vs ORDER BY |
+| `missing_filter_in_pk` | `query_log` FilterColumns vs ORDER BY |
+| `missing_skipping_index` | FilterColumns vs DDL indexes |
 | `string_abuse` | Native types |
 | `missing_lowcardinality` | LowCardinality |
 | `excessive_nullable` | Nullable count |
 | `partition_cardinality` | Partition key |
-| `missing_skipping_index` | Skipping indexes |
-| `mutation_heavy` | Mutations (evolving) |
+| `mutation_heavy` | `system.mutations` (incomplete) |
 | `too_many_parts` | `system.parts` |
+| `too_many_columns` | Column count |
 
 ## Roadmap
 

@@ -174,6 +174,9 @@ func runAudit(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Audit completed in %s\n", time.Since(start).Round(time.Millisecond))
 	report.PrintSummary(summary, outputFile)
+	if focusTable != "" {
+		fmt.Print(graph.AnalyzeImpact(g, focusTable).FormatReport())
+	}
 	return nil
 }
 

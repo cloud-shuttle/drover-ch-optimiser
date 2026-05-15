@@ -11,6 +11,7 @@ Runs the official [ClickHouse best-practices](https://clickhouse.com/docs/best-p
 | Go | `go install github.com/cloud-shuttle/drover-ch-optimiser/cmd/drover-ch@latest` |
 | Release | [GitHub Releases](https://github.com/cloud-shuttle/drover-ch-optimiser/releases) — `drover-ch` binaries for linux/darwin/windows |
 | Homebrew | `brew install ./packaging/homebrew/drover-ch.rb` (update sha after first tag) |
+| MCP | `drover-ch-mcp` — stdio server with `clickhouse_audit` tool (see [v1.1 roadmap](docs/roadmap/v1.1.md)) |
 
 Docs: **[cloud-shuttle.github.io/drover-ch-optimiser](https://cloud-shuttle.github.io/drover-ch-optimiser/)** (GitHub Pages from `main`).
 

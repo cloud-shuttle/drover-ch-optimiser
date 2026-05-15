@@ -28,24 +28,9 @@ Agents should parse `CriticalIssues` / `HighIssues` and prioritize by `rule_id` 
 3. **Propose** — suggest DDL changes (never auto-apply in production)
 4. **Verify** — re-run with `--focus` after human applies change
 
-## Drover custom command (recommended)
+## Drover custom command
 
-Create in your project:
-
-`.drover/commands/clickhouse-audit.md`:
-
-```markdown
-# ClickHouse warehouse audit
-
-Run drover-ch-optimiser and return JSON results.
-
-## Steps
-
-1. Run: `drover-ch audit --format json --output .drover/last-ch-audit.json`
-2. Summarize critical and high issues by table
-3. For each issue, cite rule_id and suggestion
-4. Do not execute ALTER TABLE without explicit user approval
-```
+This repository ships [`.drover/commands/clickhouse-audit.md`](../../.drover/commands/clickhouse-audit.md). Copy or symlink it into your project’s `.drover/commands/` directory.
 
 ## Security
 

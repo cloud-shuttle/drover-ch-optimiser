@@ -1,0 +1,60 @@
+site_name: drover-ch-optimiser
+site_description: ClickHouse warehouse auditor — Drover family
+repo_url: https://github.com/cloud-shuttle/drover-ch-optimiser
+repo_name: cloud-shuttle/drover-ch-optimiser
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: emerald
+      accent: emerald
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+    - scheme: default
+      primary: emerald
+      accent: emerald
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Tutorials:
+      - Get started: tutorials/getting-started.md
+      - Your first audit: tutorials/first-audit.md
+  - How-to guides:
+      - Audit one table: how-to/audit-specific-table.md
+      - Graph only: how-to/generate-graph-only.md
+      - drover-code integration: how-to/integrate-with-drover-code.md
+      - Schedule audits: how-to/schedule-regular-audits.md
+  - Reference:
+      - CLI: reference/cli-reference.md
+      - Rules catalog: reference/rules-catalog.md
+      - Configuration: reference/configuration.md
+      - Output formats: reference/output-formats.md
+  - Explanation:
+      - Architecture: explanation/architecture.md
+      - Best-practices philosophy: explanation/best-practices-philosophy.md
+      - Why graph visualization: explanation/why-graph-visualization.md
+      - Comparison: explanation/comparison-with-other-tools.md

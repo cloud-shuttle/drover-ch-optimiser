@@ -1,0 +1,50 @@
+# Binaries
+/drover-ch
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build & test
+*.test
+*.out
+coverage.out
+coverage.html
+*.coverprofile
+/vendor/
+
+# Local module caches (when GOMODCACHE/GOCACHE point into repo)
+.gocache/
+.gomodcache/
+.gopath/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Audit / report outputs (keep docs/ source, ignore generated reports)
+/audit.html
+/audit.md
+/audit.json
+/clickhouse-audit.*
+/clickhouse-graph.*
+
+# MkDocs site build
+/site/
+
+# Secrets — never commit real connection config
+.drover/ch-optimiser.yaml
+.env
+.env.*
+!.env.example
+
+# Optional local overrides
+/config.local.yaml

@@ -1,0 +1,100 @@
+version: "1.0"
+rules:
+  - id: schema-pk-cardinality-order
+    category: schema
+    name: Primary Key Column Order
+    severity: critical
+    impact: 10
+    description: ORDER BY columns should be ordered low-to-high cardinality
+    condition:
+      type: sorting_key_cardinality
+      message_template: "Sorting key may start with high-cardinality column '{{.BadColumn}}'"
+    suggestion: "Reorder ORDER BY from lowest to highest cardinality. Recreate table if immutable."
+
+  - id: schema-pk-prioritize-filters
+    category: schema
+    name: Include Top Filter Columns in PK
+    severity: critical
+    impact: 9
+    description: Frequently filtered columns should appear early in ORDER BY
+    condition:
+      type: missing_filter_in_pk
+      message_template: "Hot filter column '{{.Column}}' is not in ORDER BY prefix"
+    suggestion: "Add column to ORDER BY prefix or add a skipping index."
+
+  - id: schema-types-native-types
+    category: schema
+    name: Use Native Types Instead of String
+    severity: critical
+    impact: 9
+    description: Avoid String for dates, numbers, IPs, and enums
+    condition:
+      type: string_abuse
+      message_template: "{{.Count}} column(s) look like String abuse (e.g. {{.Column}})"
+    suggestion: "Use DateTime64, UInt*, IPv4, Enum, or LowCardinality as appropriate."
+
+  - id: schema-types-lowcardinality
+    category: schema
+    name: LowCardinality for Low-Cardinality Strings
+    severity: high
+    impact: 8
+    description: Wrap String columns with modest distinct counts in LowCardinality
+    condition:
+      type: missing_lowcardinality
+      message_template: "Column '{{.Column}}' is String but may benefit from LowCardinality"
+    suggestion: "ALTER COLUMN to LowCardinality(String) after validation."
+
+  - id: schema-types-avoid-nullable
+    category: schema
+    name: Avoid Nullable Columns
+    severity: high
+    impact: 7
+    description: Nullable adds storage and query overhead; prefer DEFAULT
+    condition:
+      type: excessive_nullable
+      message_template: "{{.Count}} Nullable columns (consider DEFAULT instead)"
+    suggestion: "Replace Nullable with DEFAULT literals where semantically correct."
+
+  - id: schema-partition-low-cardinality
+    category: schema
+    name: Partition Key Cardinality
+    severity: high
+    impact: 8
+    description: Target roughly 100–1,000 partitions for lifecycle management
+    condition:
+      type: partition_cardinality
+      message_template: "Partition expression '{{.Column}}' may yield suboptimal partition count"
+    suggestion: "Prefer toYYYYMM(date) or toDate(date); avoid high-cardinality partition keys."
+
+  - id: query-index-skipping-indices
+    category: query
+    name: Missing Skipping Indexes
+    severity: high
+    impact: 7
+    description: Frequent non-PK filters may need data-skipping indexes
+    condition:
+      type: missing_skipping_index
+      message_template: "Frequent filter '{{.Column}}' has no skipping index in DDL"
+    suggestion: "ADD INDEX idx_<col> <col> TYPE minmax GRANULARITY 4 (or bloom_filter for strings)."
+
+  - id: insert-mutation-avoid-update
+    category: insert
+    name: Avoid Heavy Mutations
+    severity: critical
+    impact: 10
+    description: Prefer ReplacingMergeTree / append-only over ALTER UPDATE
+    condition:
+      type: mutation_heavy
+      message_template: "Table has {{.Count}} incomplete mutations"
+    suggestion: "Use ReplacingMergeTree with version column or redesign ingest."
+
+  - id: schema-parts-too-many-active
+    category: schema
+    name: Too Many Active Parts
+    severity: high
+    impact: 8
+    description: Excessive parts hurt merge performance and queries
+    condition:
+      type: too_many_parts
+      message_template: "{{.Count}} active parts (threshold {{.Threshold}})"
+    suggestion: "Increase batch size, tune merge settings, or run OPTIMIZE during maintenance."

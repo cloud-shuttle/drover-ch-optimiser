@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -43,7 +44,13 @@ type TableSummary struct {
 	TotalBytesGB float64
 }
 
+// New builds a report with the current timestamp.
 func New(g *graph.Graph, issues map[analyzer.Severity][]analyzer.OptimizationIssue, summary analyzer.AuditSummary, queryDays int) *Report {
+	return NewAt(g, issues, summary, queryDays, time.Now())
+}
+
+// NewAt builds a report with a fixed timestamp (for golden tests).
+func NewAt(g *graph.Graph, issues map[analyzer.Severity][]analyzer.OptimizationIssue, summary analyzer.AuditSummary, queryDays int, generatedAt time.Time) *Report {
 	issueCountByTable := make(map[string]int)
 	for sev, list := range issues {
 		_ = sev
@@ -66,6 +73,9 @@ func New(g *graph.Graph, issues map[analyzer.Severity][]analyzer.OptimizationIss
 			TotalBytesGB: float64(node.TotalBytes) / (1024 * 1024 * 1024),
 		})
 	}
+	sort.Slice(tables, func(i, j int) bool {
+		return tables[i].Key < tables[j].Key
+	})
 
 	db := "all"
 	if len(g.Nodes) > 0 {
@@ -78,7 +88,7 @@ func New(g *graph.Graph, issues map[analyzer.Severity][]analyzer.OptimizationIss
 	return &Report{
 		data: ReportData{
 			Database:       db,
-			GeneratedAt:    time.Now().Format(time.RFC1123),
+			GeneratedAt:    generatedAt.Format(time.RFC1123),
 			HealthScore:    summary.HealthScore,
 			TotalTables:    len(tables),
 			QueryDays:      queryDays,

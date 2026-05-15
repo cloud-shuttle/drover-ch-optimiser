@@ -49,6 +49,11 @@ func (c *Conn) Close() error {
 	return c.conn.Close()
 }
 
+// NewFromNative wraps an existing connection (for integration tests).
+func NewFromNative(conn clickhouse.Conn) *Conn {
+	return &Conn{conn: conn}
+}
+
 func (c *Conn) Query(ctx context.Context, query string, args ...any) (driver.Rows, error) {
 	return c.conn.Query(ctx, query, args...)
 }

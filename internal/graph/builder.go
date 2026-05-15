@@ -11,7 +11,7 @@ import (
 
 const systemDBFilter = `database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')`
 
-func BuildGraph(conn *chclient.Conn, opts Options) (*Graph, error) {
+func BuildGraph(conn chclient.Querier, opts Options) (*Graph, error) {
 	if opts.DaysBack <= 0 {
 		opts.DaysBack = 30
 	}
@@ -21,7 +21,7 @@ func BuildGraph(conn *chclient.Conn, opts Options) (*Graph, error) {
 		ByEngine: make(map[string][]TableKey),
 	}
 
-	if err := fetchTables(conn, g, opts.Database); err != nil {
+	if err := fetchTables(conn, g, opts.Database, opts.Exclude); err != nil {
 		return nil, err
 	}
 	if err := fetchColumns(conn, g); err != nil {
@@ -30,9 +30,11 @@ func BuildGraph(conn *chclient.Conn, opts Options) (*Graph, error) {
 	if err := fetchParts(conn, g); err != nil {
 		return nil, err
 	}
+	_ = fetchMutations(conn, g)
 	g.buildDependencyEdges()
-	_ = g.enrichWithQueryLog(conn, opts.DaysBack)
+	_ = g.enrichWithQueryLog(conn, opts.DaysBack, opts.Exclude)
 	classifyNodeTypes(g)
+	g.pruneExcluded(opts.Exclude)
 
 	if opts.FocusTable != "" {
 		g = g.focusSubgraph(opts.FocusTable)
@@ -41,7 +43,7 @@ func BuildGraph(conn *chclient.Conn, opts Options) (*Graph, error) {
 	return g, nil
 }
 
-func fetchTables(conn *chclient.Conn, g *Graph, database string) error {
+func fetchTables(conn chclient.Querier, g *Graph, database string, exclude ExcludeSet) error {
 	q := fmt.Sprintf(`
 SELECT
     database,
@@ -64,6 +66,9 @@ WHERE %s AND is_temporary = 0
 `, systemDBFilter)
 	if database != "" {
 		q += fmt.Sprintf(" AND database = '%s'", escapeSQL(database))
+	}
+	if clause := exclude.SQLFilter(); clause != "" {
+		q += " AND " + clause
 	}
 	q += " ORDER BY database, name"
 
@@ -112,7 +117,7 @@ WHERE %s AND is_temporary = 0
 	return rows.Err()
 }
 
-func fetchColumns(conn *chclient.Conn, g *Graph) error {
+func fetchColumns(conn chclient.Querier, g *Graph) error {
 	q := fmt.Sprintf(`
 SELECT database, table, name, type, default_kind, comment
 FROM system.columns
@@ -143,7 +148,7 @@ WHERE %s
 	return rows.Err()
 }
 
-func fetchParts(conn *chclient.Conn, g *Graph) error {
+func fetchParts(conn chclient.Querier, g *Graph) error {
 	q := fmt.Sprintf(`
 SELECT database, table, count() AS active_parts
 FROM system.parts
@@ -201,7 +206,35 @@ func (g *Graph) buildDependencyEdges() {
 	}
 }
 
-func (g *Graph) enrichWithQueryLog(conn *chclient.Conn, days int) error {
+func fetchMutations(conn chclient.Querier, g *Graph) error {
+	q := fmt.Sprintf(`
+SELECT database, table, count() AS incomplete
+FROM system.mutations
+WHERE NOT is_done AND %s
+GROUP BY database, table
+`, systemDBFilter)
+
+	ctx := context.Background()
+	rows, err := conn.Query(ctx, q)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var db, tbl string
+		var n uint64
+		if err := rows.Scan(&db, &tbl, &n); err != nil {
+			return err
+		}
+		if node, ok := g.Nodes[TableKey{Database: db, Name: tbl}]; ok {
+			node.IncompleteMutations = uint32(n)
+		}
+	}
+	return rows.Err()
+}
+
+func (g *Graph) enrichWithQueryLog(conn chclient.Querier, days int, exclude ExcludeSet) error {
 	q := `
 SELECT
     arrayJoin(tables) AS table_full,
@@ -242,7 +275,7 @@ LIMIT 500
 			return err
 		}
 		key := parseTableRef(tableFull)
-		if !ShouldAnalyze(key, "") {
+		if !InScope(key, "", exclude) {
 			continue
 		}
 		node, ok := g.Nodes[key]

@@ -33,7 +33,28 @@ drover-ch audit [flags]
 | `--output` | `-o` | auto-named | Output file path |
 | `--focus` | | | Subgraph center `database.table` |
 | `--days` | | `30` | `query_log` lookback days |
-| `--database` | | | Limit to one database |
+| `--database` | | | Limit discovery to one database |
+| `--exclude` | | | Skip scope (repeatable); see below |
+
+### `--database` and `--exclude`
+
+Use **`--database`** when you want a single-database audit.
+
+Use **`--exclude`** (repeatable) to drop noisy namespaces from a multi-database scan:
+
+| Pattern | Example | Effect |
+|---------|---------|--------|
+| Database | `--exclude otel` | Skip database `otel` |
+| Table | `--exclude default.scratch` | Skip one table |
+| DB prefix | `--exclude otel*` | Skip databases starting with `otel` |
+| Table prefix | `--exclude default.temp_*` | Skip tables in `default` matching prefix |
+
+```bash
+drover-ch audit -f html -o audit.html \
+  --exclude otel \
+  --exclude peerdb \
+  --exclude default.temp_*
+```
 
 Default output files: `clickhouse-audit.md`, `.html`, or `.json`.
 
@@ -45,7 +66,7 @@ Dependency graph only (no issue narrative beyond node styling from prior rules i
 drover-ch graph [flags]
 ```
 
-Supports the same flags as `audit` for format, output, focus, days, database.
+Supports the same flags as `audit` for format, output, focus, days, database, and exclude.
 
 - Without `--format html` and without `-o`: prints Mermaid to **stdout**
 - With `-f html` or `-o`: writes `clickhouse-graph.html` (or chosen path)

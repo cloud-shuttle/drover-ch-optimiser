@@ -4,13 +4,45 @@ ClickHouse warehouse auditor and dependency-graph visualizer — part of the [Dr
 
 Runs the official [ClickHouse best-practices](https://clickhouse.com/docs/best-practices) rules against your schemas and query history, then produces Markdown, HTML, or JSON reports with an interactive Mermaid graph.
 
+## Install
+
+| Method | Command |
+|--------|---------|
+| Go | `go install github.com/cloud-shuttle/drover-ch-optimiser/cmd/drover-ch@latest` |
+| Release | [GitHub Releases](https://github.com/cloud-shuttle/drover-ch-optimiser/releases) — `drover-ch` binaries for linux/darwin/windows |
+| Homebrew | `brew install ./packaging/homebrew/drover-ch.rb` (update sha after first tag) |
+
+Docs: **[cloud-shuttle.github.io/drover-ch-optimiser](https://cloud-shuttle.github.io/drover-ch-optimiser/)** (GitHub Pages from `main`).
+
+## Testing
+
+```bash
+# Unit tests (no Docker) — includes golden HTML report diff
+make test
+make test-cover
+
+# Regenerate golden report after template changes
+go test ./internal/report -update
+
+# Integration + e2e (requires Docker)
+make ch-up
+make test-integration
+make test-e2e
+make test-all
+make ch-down
+```
+
+CI runs unit, integration, and e2e jobs on every push (`.github/workflows/test.yml`).  
+Integration tests use ClickHouse on port **19000** (`docker-compose.test.yml`) and fixtures in `testdata/clickhouse/init.sql`.
+
 ## Documentation
 
 Full [Diátaxis](https://diataxis.fr/)-structured docs in [`docs/`](docs/index.md).
 
 ```bash
-pip install mkdocs-material
-mkdocs serve
+make docs-serve    # mkdocs serve
+make docs-build    # site/ output
+make docs-deploy   # mkdocs gh-deploy (maintainers)
 ```
 
 ## Quick start
@@ -56,6 +88,7 @@ clickhouse:
 - `--focus`: limit graph to a table and its edges
 - `--days`: `query_log` lookback (default 30)
 - `--database`: scan a single database
+- `--exclude`: skip databases/tables (repeatable; e.g. `otel`, `default.temp_*`, `peerdb*`)
 
 ## Project tracking
 

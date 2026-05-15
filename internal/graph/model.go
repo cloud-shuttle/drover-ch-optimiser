@@ -39,7 +39,8 @@ type Table struct {
 	Columns          []Column   `json:"columns"`
 	TotalRows        uint64     `json:"total_rows"`
 	TotalBytes       uint64     `json:"total_bytes"`
-	ActiveParts      uint32     `json:"active_parts"`
+	ActiveParts          uint32 `json:"active_parts"`
+	IncompleteMutations  uint32 `json:"incomplete_mutations"`
 	HealthScore      float64    `json:"health_score"`
 	HotQueries       int        `json:"hot_queries"`
 	LastUsed         time.Time  `json:"last_used,omitempty"`
@@ -79,5 +80,6 @@ type Options struct {
 	FocusTable string
 	DaysBack   int
 	Database   string
+	Exclude    ExcludeSet
 	Verbose    bool
 }

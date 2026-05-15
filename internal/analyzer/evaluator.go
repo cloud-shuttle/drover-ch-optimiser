@@ -220,8 +220,10 @@ func evaluateRule(rule Rule, tbl *graph.Table, g *graph.Graph) *OptimizationIssu
 			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{"Column": col})
 		}
 	case "mutation_heavy":
-		if n := tbl.ActiveParts; n > 300 { // proxy until mutations query wired per-table
-			_ = n
+		if n := tbl.IncompleteMutations; n > 0 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count": fmt.Sprintf("%d", n),
+			})
 		}
 	case "too_many_parts":
 		if tbl.ActiveParts > 150 {

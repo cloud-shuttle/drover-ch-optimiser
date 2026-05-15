@@ -1,0 +1,18 @@
+# Test ClickHouse — use port 19000 to avoid conflicting with local installs.
+# Start: docker compose -f docker-compose.test.yml up -d --wait
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    ports:
+      - "19000:9000"
+      - "18123:8123"
+    environment:
+      CLICKHOUSE_DB: audit_test
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    # Fixtures loaded by integration/e2e tests via internal/testutil.EnsureFixtures
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8123/ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

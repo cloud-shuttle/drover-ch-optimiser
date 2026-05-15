@@ -1,7 +1,9 @@
 site_name: drover-ch-optimiser
 site_description: ClickHouse warehouse auditor — Drover family
+site_url: https://cloud-shuttle.github.io/drover-ch-optimiser/
 repo_url: https://github.com/cloud-shuttle/drover-ch-optimiser
 repo_name: cloud-shuttle/drover-ch-optimiser
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -49,6 +51,7 @@ nav:
       - drover-code integration: how-to/integrate-with-drover-code.md
       - Schedule audits: how-to/schedule-regular-audits.md
   - Reference:
+      - Installation: reference/installation.md
       - CLI: reference/cli-reference.md
       - Rules catalog: reference/rules-catalog.md
       - Configuration: reference/configuration.md

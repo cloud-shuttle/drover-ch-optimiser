@@ -80,3 +80,37 @@ func TestParseKeyColumns(t *testing.T) {
 		t.Fatalf("parseKeyColumns = %v", got)
 	}
 }
+
+func TestMergeTreePartitionedWithoutTTL(t *testing.T) {
+	yes := &graph.Table{
+		Engine: "MergeTree", PartitionKey: "toYYYYMM(d)",
+		CreateTableQuery: "CREATE TABLE t (d Date) ENGINE=MergeTree PARTITION BY toYYYYMM(d) ORDER BY d",
+	}
+	if !mergeTreePartitionedWithoutTTL(yes) {
+		t.Fatal("expected TTL missing")
+	}
+	no := &graph.Table{
+		Engine: "MergeTree", PartitionKey: "toYYYYMM(d)",
+		CreateTableQuery: "CREATE TABLE t (d Date) ENGINE=MergeTree PARTITION BY toYYYYMM(d) ORDER BY d TTL d + INTERVAL 1 YEAR",
+	}
+	if mergeTreePartitionedWithoutTTL(no) {
+		t.Fatal("did not expect TTL missing")
+	}
+}
+
+func TestEnumStyleStringColumn(t *testing.T) {
+	cols := []graph.Column{{Name: "status", Type: "String"}}
+	if enumStyleStringColumn(cols) != "status" {
+		t.Fatal("expected status")
+	}
+	if enumStyleStringColumn([]graph.Column{{Name: "status", Type: "LowCardinality(String)"}}) != "" {
+		t.Fatal("lowcardinality should skip")
+	}
+}
+
+func TestOversizedIntegerType(t *testing.T) {
+	cols := []graph.Column{{Name: "x", Type: "Int128"}}
+	if oversizedIntegerType(cols) != "x" {
+		t.Fatalf("got %q", oversizedIntegerType(cols))
+	}
+}

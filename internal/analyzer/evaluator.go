@@ -23,14 +23,15 @@ const (
 )
 
 type Rule struct {
-	ID          string    `yaml:"id"`
-	Category    string    `yaml:"category"`
-	Name        string    `yaml:"name"`
-	Severity    Severity  `yaml:"severity"`
-	Impact      int       `yaml:"impact"`
-	Description string    `yaml:"description"`
-	Condition   Condition `yaml:"condition"`
-	Suggestion  string    `yaml:"suggestion"`
+	ID           string    `yaml:"id"`
+	OfficialRule string    `yaml:"official_rule"` // ClickHouse skill rule stem (rules/<stem>.md)
+	Category     string    `yaml:"category"`
+	Name         string    `yaml:"name"`
+	Severity     Severity  `yaml:"severity"`
+	Impact       int       `yaml:"impact"`
+	Description  string    `yaml:"description"`
+	Condition    Condition `yaml:"condition"`
+	Suggestion   string    `yaml:"suggestion"`
 }
 
 type Condition struct {
@@ -39,13 +40,14 @@ type Condition struct {
 }
 
 type OptimizationIssue struct {
-	RuleID     string   `json:"rule_id"`
-	RuleName   string   `json:"rule_name"`
-	Severity   Severity `json:"severity"`
-	Impact     int      `json:"impact"`
-	Message    string   `json:"message"`
-	Suggestion string   `json:"suggestion"`
-	Table      string   `json:"table"`
+	RuleID         string   `json:"rule_id"`
+	OfficialRuleID string   `json:"official_rule_id"`
+	RuleName       string   `json:"rule_name"`
+	Severity       Severity `json:"severity"`
+	Impact         int      `json:"impact"`
+	Message        string   `json:"message"`
+	Suggestion     string   `json:"suggestion"`
+	Table          string   `json:"table"`
 }
 
 type AuditSummary struct {
@@ -80,10 +82,11 @@ func ListRules() {
 		fmt.Println("error loading rules:", err)
 		return
 	}
-	fmt.Printf("%-40s %-10s %s\n", "ID", "SEVERITY", "NAME")
-	fmt.Println(strings.Repeat("-", 90))
+	fmt.Printf("%-36s %-40s %-10s %s\n", "OFFICIAL", "ID", "SEVERITY", "NAME")
+	fmt.Println(strings.Repeat("-", 120))
 	for _, r := range rules {
-		fmt.Printf("%-40s %-10s %s\n", r.ID, r.Severity, r.Name)
+		off := officialRuleSlug(r)
+		fmt.Printf("%-36s %-40s %-10s %s\n", off, r.ID, r.Severity, r.Name)
 	}
 }
 
@@ -225,20 +228,61 @@ func evaluateRule(rule Rule, tbl *graph.Table, g *graph.Graph) *OptimizationIssu
 				"Count": fmt.Sprintf("%d", n),
 			})
 		}
-	case "too_many_parts":
+	case "optimize_merge_pressure":
+		var parts []string
 		if tbl.ActiveParts > 150 {
+			parts = append(parts, fmt.Sprintf("%d active parts (>150)", tbl.ActiveParts))
+		}
+		if tbl.QueryLogSelectFinals >= 3 {
+			parts = append(parts, fmt.Sprintf("SELECT ... FINAL seen %d× in query_log", tbl.QueryLogSelectFinals))
+		}
+		if len(parts) > 0 {
 			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
-				"Count":     fmt.Sprintf("%d", tbl.ActiveParts),
-				"Threshold": "150",
+				"Detail": strings.Join(parts, "; "),
 			})
 		}
-	case "too_many_columns":
-		if n := len(tbl.Columns); n > 80 {
+	case "minimize_bitwidth":
+		if col := oversizedIntegerType(tbl.Columns); col != "" {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{"Column": col})
+		}
+	case "enum_string_candidate":
+		if col := enumStyleStringColumn(tbl.Columns); col != "" {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{"Column": col})
+		}
+	case "merge_tree_partition_no_ttl":
+		if mergeTreePartitionedWithoutTTL(tbl) {
 			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
-				"Count":     fmt.Sprintf("%d", n),
-				"Threshold": "80",
+				"Column": tbl.PartitionKey,
 			})
 		}
+	case "partition_yyyymmdd_churn":
+		if partitionKeyUsesYYYYMMDD(tbl.PartitionKey) {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Column": tbl.PartitionKey,
+			})
+		}
+	case "json_dynamic_column":
+		if col := jsonOrObjectColumn(tbl.Columns); col != "" {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{"Column": col})
+		}
+	case "incomplete_delete_mutation":
+		if tbl.IncompleteDeleteMutations > 0 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count": fmt.Sprintf("%d", tbl.IncompleteDeleteMutations),
+			})
+		}
+	case "insert_batch_rows_too_small":
+		if tbl.QueryLogInsertCount >= 12 && tbl.QueryLogInsertAvgRows > 0 && tbl.QueryLogInsertAvgRows < 3000 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count": fmt.Sprintf("%d", int(tbl.QueryLogInsertAvgRows)),
+			})
+		}
+	case "mv_incremental_heuristic":
+		if mvIncrementalHeuristic(tbl) {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{})
+		}
+	case "manual_review":
+		return nil
 	default:
 		return nil
 	}
@@ -248,13 +292,21 @@ func evaluateRule(rule Rule, tbl *graph.Table, g *graph.Graph) *OptimizationIssu
 	}
 
 	return &OptimizationIssue{
-		RuleID:     rule.ID,
-		RuleName:   rule.Name,
-		Severity:   rule.Severity,
-		Impact:     rule.Impact,
-		Message:    msg,
-		Suggestion: rule.Suggestion,
+		RuleID:         rule.ID,
+		OfficialRuleID: officialRuleSlug(rule),
+		RuleName:       rule.Name,
+		Severity:       rule.Severity,
+		Impact:         rule.Impact,
+		Message:        msg,
+		Suggestion:     rule.Suggestion,
 	}
+}
+
+func officialRuleSlug(r Rule) string {
+	if strings.TrimSpace(r.OfficialRule) != "" {
+		return r.OfficialRule
+	}
+	return r.ID
 }
 
 func replaceTemplate(tpl string, vars map[string]string) string {

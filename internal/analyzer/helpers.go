@@ -208,3 +208,73 @@ func parseKeyColumns(key string) []string {
 	}
 	return out
 }
+
+func oversizedIntegerType(cols []graph.Column) string {
+	for _, c := range cols {
+		lt := strings.ToLower(c.Type)
+		if strings.Contains(lt, "int128") || strings.Contains(lt, "int256") ||
+			strings.Contains(lt, "uint128") || strings.Contains(lt, "uint256") {
+			return c.Name
+		}
+	}
+	return ""
+}
+
+func enumStyleStringColumn(cols []graph.Column) string {
+	candidates := []string{"status", "kind", "state", "tier", "environment", "env", "level", "severity"}
+	for _, c := range cols {
+		lt := strings.ToLower(c.Type)
+		if !strings.HasPrefix(lt, "string") && !strings.HasPrefix(lt, "nullable(string") {
+			continue
+		}
+		if strings.Contains(lt, "lowcardinality") {
+			continue
+		}
+		name := strings.ToLower(c.Name)
+		for _, want := range candidates {
+			if name == want || strings.HasSuffix(name, "_"+want) {
+				return c.Name
+			}
+		}
+	}
+	return ""
+}
+
+func mergeTreePartitionedWithoutTTL(tbl *graph.Table) bool {
+	eng := strings.ToLower(tbl.Engine)
+	if !strings.Contains(eng, "mergetree") || tbl.PartitionKey == "" {
+		return false
+	}
+	q := strings.ToLower(tbl.CreateTableQuery)
+	if strings.Contains(q, " ttl ") || strings.Contains(q, "\nttl ") {
+		return false
+	}
+	pk := strings.ToLower(tbl.PartitionKey)
+	return strings.Contains(pk, "toyyyy") || strings.Contains(pk, "todate") || strings.Contains(pk, "today()")
+}
+
+func partitionKeyUsesYYYYMMDD(pk string) bool {
+	return strings.Contains(strings.ToLower(pk), "toyyyymmdd")
+}
+
+func jsonOrObjectColumn(cols []graph.Column) string {
+	for _, c := range cols {
+		lt := strings.ToLower(c.Type)
+		if strings.HasPrefix(lt, "json") || strings.Contains(lt, "object('json')") || strings.Contains(lt, `object("json")`) {
+			return c.Name
+		}
+	}
+	return ""
+}
+
+func mvIncrementalHeuristic(tbl *graph.Table) bool {
+	if !strings.Contains(strings.ToLower(tbl.Engine), "materializedview") {
+		return false
+	}
+	q := strings.ToLower(tbl.CreateTableQuery)
+	if !strings.Contains(q, "group by") {
+		return false
+	}
+	ef := strings.ToLower(tbl.EngineFull)
+	return !strings.Contains(ef, "aggregatingmergetree") && !strings.Contains(ef, "summingmergetree")
+}

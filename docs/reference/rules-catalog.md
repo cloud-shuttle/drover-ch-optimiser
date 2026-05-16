@@ -1,58 +1,52 @@
 # Rules catalog
 
-Rules are embedded in `internal/analyzer/rules.yaml` and aligned with the official [ClickHouse best-practices skill](https://github.com/ClickHouse/agent-skills/tree/main/skills/clickhouse-best-practices).
+Rules are embedded in `internal/analyzer/rules.yaml` and aligned with the official [ClickHouse best-practices skill](https://github.com/ClickHouse/agent-skills/tree/main/skills/clickhouse-best-practices) (**31 rule stems**).
 
-List live rules:
+Each rule has an `official_rule` field matching the skill file name (without `.md`). Audit JSON issues include **`official_rule_id`** (same value) next to `rule_id` for agents and docs cross-links.
 
 ```bash
 drover-ch rules
 ```
 
-## Schema
+Columns: **OFFICIAL** (skill stem), **ID** (stable drover id, usually identical), **SEVERITY**, **NAME**.
 
-| Rule ID | Severity | Impact | Summary | Suggestion (abbrev.) |
-|---------|----------|--------|---------|----------------------|
-| `schema-pk-cardinality-order` | critical | 10 | ORDER BY should be low→high cardinality | Reorder keys; recreate table if needed |
-| `schema-pk-prioritize-filters` | critical | 9 | Hot filters should be in ORDER BY prefix | Add to ORDER BY or skipping index |
-| `schema-types-native-types` | critical | 9 | Avoid String for dates, numbers, IPs | Use native types |
-| `schema-types-lowcardinality` | high | 8 | Low-card strings → LowCardinality | `LowCardinality(String)` |
-| `schema-types-avoid-nullable` | high | 7 | Nullable overhead | Prefer DEFAULT |
-| `schema-partition-low-cardinality` | high | 8 | ~100–1k partitions target | `toYYYYMM` / `toDate` |
-| `schema-parts-too-many-active` | high | 8 | Too many active parts | Batch inserts, merges, OPTIMIZE |
-| `schema-wide-table` | medium | 6 | >80 columns | Split / project columns |
+## Implemented vs manual
 
-## Query
+| Kind | Count | Meaning |
+|------|-------|---------|
+| **Static checks** | 18 | Evaluated from `system.*`, DDL, and `query_log` heuristics |
+| **manual_review** | 13 | Listed in `drover-ch rules` with skill pointer; no automatic signal in static audit |
 
-| Rule ID | Severity | Impact | Summary | Suggestion (abbrev.) |
-|---------|----------|--------|---------|----------------------|
-| `query-index-skipping-indices` | high | 7 | Frequent non-PK filters need indexes | ADD INDEX minmax / bloom_filter |
-
-## Insert / mutations
-
-| Rule ID | Severity | Impact | Summary | Suggestion (abbrev.) |
-|---------|----------|--------|---------|----------------------|
-| `insert-mutation-avoid-update` | critical | 10 | Heavy mutations are costly | ReplacingMergeTree, append-only |
+Manual rows cover JOIN tuning, async/format insert choices, partition “start without”, refreshable MVs, and **agent** workflow rules — cite `rules/<official_rule>.md` when reviewing manually.
 
 ## Condition types (implementation)
 
-| Type | Used by |
-|------|---------|
-| `sorting_key_cardinality` | PK order |
-| `missing_filter_in_pk` | `query_log` FilterColumns vs ORDER BY |
-| `missing_skipping_index` | FilterColumns vs DDL indexes |
-| `string_abuse` | Native types |
-| `missing_lowcardinality` | LowCardinality |
-| `excessive_nullable` | Nullable count |
-| `partition_cardinality` | Partition key |
-| `mutation_heavy` | `system.mutations` (incomplete) |
-| `too_many_parts` | `system.parts` |
-| `too_many_columns` | Column count |
-
-## Roadmap
-
-v1.1 targets the full 31-rule skill catalog. Track progress in [`.beads/issues.jsonl`](../../.beads/issues.jsonl) (`drover-ch-012`).
+| Type | Typical signal |
+|------|----------------|
+| `sorting_key_cardinality` | ORDER BY first column vs heuristics |
+| `missing_filter_in_pk` | `query_log` filter columns vs ORDER BY prefix |
+| `string_abuse` | String-typed dates / amounts / IPs in DDL |
+| `minimize_bitwidth` | Int128 / UInt256-style widths |
+| `enum_string_candidate` | `status` / `kind` / … plain String |
+| `missing_lowcardinality` | Low-cardinality string columns |
+| `excessive_nullable` | Nullable column count |
+| `partition_cardinality` | Partition expression heuristics |
+| `merge_tree_partition_no_ttl` | Partitioned MergeTree without `TTL` |
+| `partition_yyyymmdd_churn` | `toYYYYMMDD` in partition key |
+| `json_dynamic_column` | `JSON` / `Object('json')` column types |
+| `missing_skipping_index` | Hot filters vs DDL indexes |
+| `mv_incremental_heuristic` | MV with `GROUP BY` into non-aggregating target |
+| `mutation_heavy` | Incomplete `system.mutations` |
+| `incomplete_delete_mutation` | Incomplete mutations whose command mentions DELETE |
+| `optimize_merge_pressure` | Many active parts and/or frequent `FINAL` in `query_log` |
+| `insert_batch_rows_too_small` | High insert count with low `written_rows` average |
+| `manual_review` | Never emits issues; documents skill-only rules |
 
 ## Official references
 
 - [ClickHouse best practices docs](https://clickhouse.com/docs/best-practices)
-- Per-rule markdown files under `rules/` in the agent-skills repository
+- Skill rule files: `rules/<official_rule>.md` in the agent-skills repository
+
+## Roadmap
+
+Follow-up heuristics (JOIN parsing, optional **drover-wide-table** extension): see [v1.2 epic](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.beads/issues.jsonl) `drover-ch-019` in Beads.

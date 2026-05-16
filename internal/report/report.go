@@ -36,11 +36,11 @@ type ReportData struct {
 }
 
 type TableSummary struct {
-	Key         string
-	Engine      string
-	HealthScore float64
-	IssueCount  int
-	TotalRows   uint64
+	Key          string
+	Engine       string
+	HealthScore  float64
+	IssueCount   int
+	TotalRows    uint64
 	TotalBytesGB float64
 }
 
@@ -157,6 +157,9 @@ func (r *Report) WriteMarkdown(path string) error {
 
 func writeIssue(b *strings.Builder, iss analyzer.OptimizationIssue) {
 	b.WriteString(fmt.Sprintf("### `%s` — %s\n\n", iss.Table, iss.RuleID))
+	if iss.OfficialRuleID != "" && iss.OfficialRuleID != iss.RuleID {
+		b.WriteString(fmt.Sprintf("- **Official rule:** `%s`\n", iss.OfficialRuleID))
+	}
 	b.WriteString(fmt.Sprintf("- **%s**\n", iss.Message))
 	b.WriteString(fmt.Sprintf("- Suggestion: %s\n\n", iss.Suggestion))
 }

@@ -19,8 +19,8 @@ func TestReplaceTemplate(t *testing.T) {
 func TestEvaluateRule_TooManyParts(t *testing.T) {
 	_ = loadRules()
 	rule := Rule{
-		ID: "schema-parts-too-many-active", Severity: High, Impact: 8,
-		Condition: Condition{Type: "too_many_parts", MessageTemplate: "{{.Count}} parts"},
+		ID: "insert-optimize-avoid-final", Severity: High, Impact: 8,
+		Condition:  Condition{Type: "optimize_merge_pressure", MessageTemplate: "{{.Detail}}"},
 		Suggestion: "fix",
 	}
 	tbl := &graph.Table{ActiveParts: 200, Key: graph.TableKey{Database: "db", Name: "t"}, Engine: "MergeTree"}
@@ -81,7 +81,12 @@ func TestEveryRuleHasHandler(t *testing.T) {
 		"string_abuse": true, "missing_lowcardinality": true,
 		"excessive_nullable": true, "partition_cardinality": true,
 		"missing_skipping_index": true, "mutation_heavy": true,
-		"too_many_parts": true, "too_many_columns": true,
+		"optimize_merge_pressure": true,
+		"minimize_bitwidth":       true, "enum_string_candidate": true,
+		"merge_tree_partition_no_ttl": true, "partition_yyyymmdd_churn": true,
+		"json_dynamic_column": true, "incomplete_delete_mutation": true,
+		"insert_batch_rows_too_small": true, "mv_incremental_heuristic": true,
+		"manual_review": true,
 	}
 	for _, r := range rules {
 		if !known[r.Condition.Type] {

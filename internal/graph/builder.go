@@ -83,9 +83,9 @@ WHERE %s AND is_temporary = 0
 	for rows.Next() {
 		var (
 			db, name, engine, engineFull, createQ string
-			partKey, sortKey, primKey              string
-			depsDB, depsTbl                        []string
-			totalRows, totalBytes                  uint64
+			partKey, sortKey, primKey             string
+			depsDB, depsTbl                       []string
+			totalRows, totalBytes                 uint64
 		)
 		if err := rows.Scan(
 			&db, &name, &engine, &engineFull, &createQ,
@@ -209,7 +209,8 @@ func (g *Graph) buildDependencyEdges() {
 
 func fetchMutations(conn chclient.Querier, g *Graph) error {
 	q := fmt.Sprintf(`
-SELECT database, table, count() AS incomplete
+SELECT database, table, count() AS incomplete,
+    countIf(positionCaseInsensitive(ifNull(command, ''), 'DELETE') > 0) AS incomplete_delete
 FROM system.mutations
 WHERE NOT is_done AND %s
 GROUP BY database, table
@@ -224,12 +225,13 @@ GROUP BY database, table
 
 	for rows.Next() {
 		var db, tbl string
-		var n uint64
-		if err := rows.Scan(&db, &tbl, &n); err != nil {
+		var n, del uint64
+		if err := rows.Scan(&db, &tbl, &n, &del); err != nil {
 			return err
 		}
 		if node, ok := g.Nodes[TableKey{Database: db, Name: tbl}]; ok {
 			node.IncompleteMutations = uint32(n)
+			node.IncompleteDeleteMutations = uint32(del)
 		}
 	}
 	return rows.Err()
@@ -304,6 +306,7 @@ LIMIT 500
 	}
 
 	_ = g.enrichFilterColumns(conn, days, exclude)
+	_ = g.enrichQueryPatterns(conn, days, exclude)
 	return rows.Err()
 }
 
@@ -386,6 +389,77 @@ LIMIT 2000
 			added = append(added, p.name)
 		}
 		node.FilterColumns = mergeFilterColumns(node.FilterColumns, added, 8)
+	}
+	return nil
+}
+
+func (g *Graph) enrichQueryPatterns(conn chclient.Querier, days int, exclude ExcludeSet) error {
+	finalQ := `
+SELECT arrayJoin(tables) AS table_full, count() AS n
+FROM system.query_log
+WHERE type = 'QueryFinish'
+  AND query_kind = 'Select'
+  AND event_date >= today() - ?
+  AND length(tables) > 0
+  AND positionCaseInsensitive(query, ' FINAL') > 0
+GROUP BY table_full
+HAVING n >= 3
+LIMIT 500
+`
+	insertQ := `
+SELECT arrayJoin(tables) AS table_full, count() AS ins_n, avg(written_rows) AS avg_rows
+FROM system.query_log
+WHERE type = 'QueryFinish'
+  AND query_kind = 'Insert'
+  AND event_date >= today() - ?
+  AND length(tables) > 0
+  AND written_rows > 0
+GROUP BY table_full
+HAVING ins_n >= 12 AND avg_rows < 3000
+LIMIT 500
+`
+	ctx := context.Background()
+
+	if rows, err := conn.Query(ctx, finalQ, days); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var tableFull string
+			var n uint64
+			if err := rows.Scan(&tableFull, &n); err != nil {
+				return err
+			}
+			key := parseTableRef(tableFull)
+			if !InScope(key, "", exclude) {
+				continue
+			}
+			if node, ok := g.Nodes[key]; ok {
+				node.QueryLogSelectFinals = uint32(n)
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+	}
+
+	if rows, err := conn.Query(ctx, insertQ, days); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var tableFull string
+			var insN uint64
+			var avgRows float64
+			if err := rows.Scan(&tableFull, &insN, &avgRows); err != nil {
+				return err
+			}
+			key := parseTableRef(tableFull)
+			if !InScope(key, "", exclude) {
+				continue
+			}
+			if node, ok := g.Nodes[key]; ok {
+				node.QueryLogInsertCount = uint32(insN)
+				node.QueryLogInsertAvgRows = avgRows
+			}
+		}
+		return rows.Err()
 	}
 	return nil
 }

@@ -27,26 +27,30 @@ type Column struct {
 }
 
 type Table struct {
-	Key              TableKey   `json:"key"`
-	Engine           string     `json:"engine"`
-	EngineFull       string     `json:"engine_full"`
-	CreateTableQuery string     `json:"create_table_query"`
-	PartitionKey     string     `json:"partition_key"`
-	SortingKey       string     `json:"sorting_key"`
-	PrimaryKey       string     `json:"primary_key"`
-	DependenciesDB   []string   `json:"deps_db"`
-	DependenciesTbl  []string   `json:"deps_tbl"`
-	Columns          []Column   `json:"columns"`
-	TotalRows        uint64     `json:"total_rows"`
-	TotalBytes       uint64     `json:"total_bytes"`
-	ActiveParts          uint32 `json:"active_parts"`
-	IncompleteMutations  uint32 `json:"incomplete_mutations"`
-	HealthScore      float64    `json:"health_score"`
-	HotQueries       int        `json:"hot_queries"`
-	LastUsed         time.Time  `json:"last_used,omitempty"`
-	NodeType         NodeType   `json:"node_type"`
-	Color            string     `json:"color"`
-	FilterColumns    []string   `json:"filter_columns"`
+	Key                       TableKey  `json:"key"`
+	Engine                    string    `json:"engine"`
+	EngineFull                string    `json:"engine_full"`
+	CreateTableQuery          string    `json:"create_table_query"`
+	PartitionKey              string    `json:"partition_key"`
+	SortingKey                string    `json:"sorting_key"`
+	PrimaryKey                string    `json:"primary_key"`
+	DependenciesDB            []string  `json:"deps_db"`
+	DependenciesTbl           []string  `json:"deps_tbl"`
+	Columns                   []Column  `json:"columns"`
+	TotalRows                 uint64    `json:"total_rows"`
+	TotalBytes                uint64    `json:"total_bytes"`
+	ActiveParts               uint32    `json:"active_parts"`
+	IncompleteMutations       uint32    `json:"incomplete_mutations"`
+	IncompleteDeleteMutations uint32    `json:"incomplete_delete_mutations"`
+	QueryLogSelectFinals      uint32    `json:"query_log_select_finals"`
+	QueryLogInsertCount       uint32    `json:"query_log_insert_count"`
+	QueryLogInsertAvgRows     float64   `json:"query_log_insert_avg_rows"`
+	HealthScore               float64   `json:"health_score"`
+	HotQueries                int       `json:"hot_queries"`
+	LastUsed                  time.Time `json:"last_used,omitempty"`
+	NodeType                  NodeType  `json:"node_type"`
+	Color                     string    `json:"color"`
+	FilterColumns             []string  `json:"filter_columns"`
 }
 
 type EdgeType string

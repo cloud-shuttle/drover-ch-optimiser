@@ -18,8 +18,8 @@ func TestRulesCommand(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	if !strings.Contains(out, "insert-mutation") && !strings.Contains(out, "mutation") {
-		t.Errorf("rules output missing mutation rule: %q", truncate(out, 300))
+	if !strings.Contains(out, "OFFICIAL") {
+		t.Errorf("rules header missing OFFICIAL: %q", truncate(out, 400))
 	}
 }
 

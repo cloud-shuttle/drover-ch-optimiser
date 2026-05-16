@@ -32,7 +32,7 @@ func TestBuildGraph_MockQuerier(t *testing.T) {
 			},
 			{
 				Contains: "system.mutations",
-				Rows:     [][]any{{"audit_test", "events", uint64(2)}},
+				Rows:     [][]any{{"audit_test", "events", uint64(2), uint64(0)}},
 			},
 		},
 	}

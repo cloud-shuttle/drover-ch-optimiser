@@ -53,15 +53,16 @@ func goldenGraph() *graph.Graph {
 	return &graph.Graph{
 		Nodes: map[graph.TableKey]*graph.Table{
 			{Database: "audit_test", Name: "events_bad"}: {
-				Key:          graph.TableKey{Database: "audit_test", Name: "events_bad"},
-				Engine:       "MergeTree",
-				SortingKey:   "user_uuid, day",
-				PartitionKey: "toYYYYMM(day)",
-				HealthScore:  85,
-				NodeType:     graph.NodeTable,
+				Key:              graph.TableKey{Database: "audit_test", Name: "events_bad"},
+				Engine:           "MergeTree",
+				SortingKey:       "user_uuid, day",
+				PartitionKey:     "toYYYYMM(day)",
+				CreateTableQuery: "CREATE TABLE audit_test.events_bad (`day` Date, `user_uuid` UUID, `created_at` String, `segment` String) ENGINE = MergeTree PARTITION BY toYYYYMM(day) ORDER BY (user_uuid, day) TTL toDate(day) + toIntervalDay(400)",
+				HealthScore:      85,
+				NodeType:         graph.NodeTable,
 				Columns: []graph.Column{
 					{Name: "created_at", Type: "String"},
-					{Name: "status", Type: "String"},
+					{Name: "segment", Type: "String"},
 				},
 				ActiveParts: 200,
 			},

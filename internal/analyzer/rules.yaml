@@ -1,111 +1,366 @@
-version: "1.0"
+version: '1.0'
 rules:
-  - id: schema-pk-cardinality-order
-    category: schema
-    name: Primary Key Column Order
-    severity: critical
-    impact: 10
-    description: ORDER BY columns should be ordered low-to-high cardinality
-    condition:
-      type: sorting_key_cardinality
-      message_template: "Sorting key may start with high-cardinality column '{{.BadColumn}}'"
-    suggestion: "Reorder ORDER BY from lowest to highest cardinality. Recreate table if immutable."
-
-  - id: schema-pk-prioritize-filters
-    category: schema
-    name: Include Top Filter Columns in PK
-    severity: critical
-    impact: 9
-    description: Frequently filtered columns should appear early in ORDER BY
-    condition:
-      type: missing_filter_in_pk
-      message_template: "Hot filter column '{{.Column}}' is not in ORDER BY prefix"
-    suggestion: "Add column to ORDER BY prefix or add a skipping index."
-
-  - id: schema-types-native-types
-    category: schema
-    name: Use Native Types Instead of String
-    severity: critical
-    impact: 9
-    description: Avoid String for dates, numbers, IPs, and enums
-    condition:
-      type: string_abuse
-      message_template: "{{.Count}} column(s) look like String abuse (e.g. {{.Column}})"
-    suggestion: "Use DateTime64, UInt*, IPv4, Enum, or LowCardinality as appropriate."
-
-  - id: schema-types-lowcardinality
-    category: schema
-    name: LowCardinality for Low-Cardinality Strings
-    severity: high
-    impact: 8
-    description: Wrap String columns with modest distinct counts in LowCardinality
-    condition:
-      type: missing_lowcardinality
-      message_template: "Column '{{.Column}}' is String but may benefit from LowCardinality"
-    suggestion: "ALTER COLUMN to LowCardinality(String) after validation."
-
-  - id: schema-types-avoid-nullable
-    category: schema
-    name: Avoid Nullable Columns
-    severity: high
-    impact: 7
-    description: Nullable adds storage and query overhead; prefer DEFAULT
-    condition:
-      type: excessive_nullable
-      message_template: "{{.Count}} Nullable columns (consider DEFAULT instead)"
-    suggestion: "Replace Nullable with DEFAULT literals where semantically correct."
-
-  - id: schema-partition-low-cardinality
-    category: schema
-    name: Partition Key Cardinality
-    severity: high
-    impact: 8
-    description: Target roughly 100–1,000 partitions for lifecycle management
-    condition:
-      type: partition_cardinality
-      message_template: "Partition expression '{{.Column}}' may yield suboptimal partition count"
-    suggestion: "Prefer toYYYYMM(date) or toDate(date); avoid high-cardinality partition keys."
-
-  - id: query-index-skipping-indices
-    category: query
-    name: Missing Skipping Indexes
-    severity: high
-    impact: 7
-    description: Frequent non-PK filters may need data-skipping indexes
-    condition:
-      type: missing_skipping_index
-      message_template: "Frequent filter '{{.Column}}' has no skipping index in DDL"
-    suggestion: "ADD INDEX idx_<col> <col> TYPE minmax GRANULARITY 4 (or bloom_filter for strings)."
-
-  - id: insert-mutation-avoid-update
-    category: insert
-    name: Avoid Heavy Mutations
-    severity: critical
-    impact: 10
-    description: Prefer ReplacingMergeTree / append-only over ALTER UPDATE
-    condition:
-      type: mutation_heavy
-      message_template: "Table has {{.Count}} incomplete mutations"
-    suggestion: "Use ReplacingMergeTree with version column or redesign ingest."
-
-  - id: schema-parts-too-many-active
-    category: schema
-    name: Too Many Active Parts
-    severity: high
-    impact: 8
-    description: Excessive parts hurt merge performance and queries
-    condition:
-      type: too_many_parts
-      message_template: "{{.Count}} active parts (threshold {{.Threshold}})"
-    suggestion: "Increase batch size, tune merge settings, or run OPTIMIZE during maintenance."
-
-  - id: schema-wide-table
-    category: schema
-    name: Wide Table (Too Many Columns)
-    severity: medium
-    impact: 6
-    description: Very wide tables increase memory and merge cost
-    condition:
-      type: too_many_columns
-      message_template: "{{.Count}} columns (recommended max {{.Threshold}})"
-    suggestion: "Split into satellite tables, use Nested/JSON sparingly, or project only needed columns in MVs."
+- id: schema-pk-cardinality-order
+  official_rule: schema-pk-cardinality-order
+  category: schema
+  name: Primary Key Column Order
+  severity: critical
+  impact: 10
+  description: ORDER BY low-to-high cardinality
+  suggestion: Reorder ORDER BY from lowest to highest cardinality. Recreate table
+    if immutable.
+  condition:
+    type: sorting_key_cardinality
+    message_template: Sorting key may start with high-cardinality column '{{.BadColumn}}'
+- id: schema-pk-prioritize-filters
+  official_rule: schema-pk-prioritize-filters
+  category: schema
+  name: Include Top Filter Columns in PK
+  severity: critical
+  impact: 9
+  description: Hot filters early in ORDER BY
+  suggestion: Add column to ORDER BY prefix or add a skipping index.
+  condition:
+    type: missing_filter_in_pk
+    message_template: Hot filter column '{{.Column}}' is not in ORDER BY prefix
+- id: schema-types-native-types
+  official_rule: schema-types-native-types
+  category: schema
+  name: Use Native Types Instead of String
+  severity: critical
+  impact: 9
+  description: Avoid String for dates/numbers
+  suggestion: Use DateTime64, UInt*, IPv4, Enum, or LowCardinality as appropriate.
+  condition:
+    type: string_abuse
+    message_template: '{{.Count}} column(s) look like String abuse (e.g. {{.Column}})'
+- id: schema-types-minimize-bitwidth
+  official_rule: schema-types-minimize-bitwidth
+  category: schema
+  name: Minimize Integer Bit Width
+  severity: high
+  impact: 6
+  description: Avoid oversized integer types
+  suggestion: Prefer the smallest UInt/Int that fits your value range.
+  condition:
+    type: minimize_bitwidth
+    message_template: Column '{{.Column}}' uses an oversized integer type
+- id: schema-types-enum
+  official_rule: schema-types-enum
+  category: schema
+  name: Enum for Finite String Sets
+  severity: medium
+  impact: 5
+  description: Finite value sets
+  suggestion: Consider Enum8/Enum16 or LowCardinality(String) after profiling.
+  condition:
+    type: enum_string_candidate
+    message_template: Column '{{.Column}}' is String but looks like a finite enum
+- id: schema-types-lowcardinality
+  official_rule: schema-types-lowcardinality
+  category: schema
+  name: LowCardinality for Low-Cardinality Strings
+  severity: high
+  impact: 8
+  description: LowCardinality strings
+  suggestion: ALTER COLUMN to LowCardinality(String) after validation.
+  condition:
+    type: missing_lowcardinality
+    message_template: Column '{{.Column}}' is String but may benefit from LowCardinality
+- id: schema-types-avoid-nullable
+  official_rule: schema-types-avoid-nullable
+  category: schema
+  name: Avoid Nullable Columns
+  severity: high
+  impact: 7
+  description: Nullable overhead
+  suggestion: Replace Nullable with DEFAULT literals where semantically correct.
+  condition:
+    type: excessive_nullable
+    message_template: '{{.Count}} Nullable columns (consider DEFAULT instead)'
+- id: schema-partition-low-cardinality
+  official_rule: schema-partition-low-cardinality
+  category: schema
+  name: Partition Key Cardinality
+  severity: high
+  impact: 8
+  description: Partition count target
+  suggestion: Prefer toYYYYMM(date) or toDate(date); avoid high-cardinality partition
+    keys.
+  condition:
+    type: partition_cardinality
+    message_template: Partition expression '{{.Column}}' may yield suboptimal partition
+      count
+- id: schema-partition-lifecycle
+  official_rule: schema-partition-lifecycle
+  category: schema
+  name: Partition Lifecycle (TTL)
+  severity: medium
+  impact: 6
+  description: TTL for lifecycle
+  suggestion: Add TTL for retention; partition for drops, not hot-path pruning alone.
+  condition:
+    type: merge_tree_partition_no_ttl
+    message_template: Partition key '{{.Column}}' but no TTL in DDL — lifecycle unclear
+- id: schema-partition-query-tradeoffs
+  official_rule: schema-partition-query-tradeoffs
+  category: schema
+  name: Daily Partition Churn
+  severity: medium
+  impact: 5
+  description: toYYYYMMDD trade-offs
+  suggestion: Prefer month buckets (toYYYYMM) unless you need daily drops and accept
+    merge cost.
+  condition:
+    type: partition_yyyymmdd_churn
+    message_template: Partition uses high-churn expression '{{.Column}}'
+- id: schema-json-when-to-use
+  official_rule: schema-json-when-to-use
+  category: schema
+  name: JSON / Object Columns
+  severity: medium
+  impact: 5
+  description: Typed vs JSON
+  suggestion: Model known fields as columns; reserve JSON for truly dynamic attributes.
+  condition:
+    type: json_dynamic_column
+    message_template: JSON/Object column '{{.Column}}' — prefer typed columns when
+      schema is stable
+- id: query-index-skipping-indices
+  official_rule: query-index-skipping-indices
+  category: query
+  name: Missing Skipping Indexes
+  severity: high
+  impact: 7
+  description: Non-PK filters
+  suggestion: ADD INDEX idx_<col> <col> TYPE minmax GRANULARITY 4 (or bloom_filter
+    for strings).
+  condition:
+    type: missing_skipping_index
+    message_template: Frequent filter '{{.Column}}' has no skipping index in DDL
+- id: query-mv-incremental
+  official_rule: query-mv-incremental
+  category: query
+  name: MV Target Engine for Aggregates
+  severity: high
+  impact: 6
+  description: Incremental MV pattern
+  suggestion: Prefer SummingMergeTree / AggregatingMergeTree for rollups.
+  condition:
+    type: mv_incremental_heuristic
+    message_template: Materialized view aggregates (GROUP BY) into a plain MergeTree
+      target
+- id: insert-mutation-avoid-update
+  official_rule: insert-mutation-avoid-update
+  category: insert
+  name: Avoid Heavy Mutations
+  severity: critical
+  impact: 10
+  description: Prefer append-only patterns
+  suggestion: Use ReplacingMergeTree with version column or redesign ingest.
+  condition:
+    type: mutation_heavy
+    message_template: Table has {{.Count}} incomplete mutations
+- id: insert-mutation-avoid-delete
+  official_rule: insert-mutation-avoid-delete
+  category: insert
+  name: Avoid Heavy Delete Mutations
+  severity: critical
+  impact: 9
+  description: DELETE mutations
+  suggestion: Prefer lightweight DELETE where supported or partition DROP for bulk
+    removal.
+  condition:
+    type: incomplete_delete_mutation
+    message_template: '{{.Count}} incomplete DELETE-style mutations'
+- id: insert-optimize-avoid-final
+  official_rule: insert-optimize-avoid-final
+  category: insert
+  name: Merge Pressure / FINAL
+  severity: high
+  impact: 8
+  description: Parts and FINAL
+  suggestion: Increase batch size, avoid FINAL in hot paths, tune merges, run OPTIMIZE
+    off-peak.
+  condition:
+    type: optimize_merge_pressure
+    message_template: '{{.Detail}}'
+- id: insert-batch-size
+  official_rule: insert-batch-size
+  category: insert
+  name: Insert Batch Size
+  severity: high
+  impact: 7
+  description: Batch 10k–100k rows
+  suggestion: Batch inserts to ~10k–100k rows per insert where possible.
+  condition:
+    type: insert_batch_rows_too_small
+    message_template: Inserts average ~{{.Count}} rows (many small batches in query_log)
+- id: schema-pk-plan-before-creation
+  official_rule: schema-pk-plan-before-creation
+  category: schema
+  name: Plan ORDER BY Before Creation
+  severity: medium
+  impact: 4
+  description: ORDER BY is immutable — plan keys up front.
+  suggestion: See ClickHouse skill rules/schema-pk-plan-before-creation.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: schema-pk-filter-on-orderby
+  official_rule: schema-pk-filter-on-orderby
+  category: schema
+  name: Filters on ORDER BY Prefix
+  severity: medium
+  impact: 4
+  description: Queries should filter on leading ORDER BY columns.
+  suggestion: See ClickHouse skill rules/schema-pk-filter-on-orderby.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-join-choose-algorithm
+  official_rule: query-join-choose-algorithm
+  category: query
+  name: JOIN Algorithm Selection
+  severity: high
+  impact: 7
+  description: Pick HASH vs direct based on table sizes.
+  suggestion: See ClickHouse skill rules/query-join-choose-algorithm.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-join-filter-before
+  official_rule: query-join-filter-before
+  category: query
+  name: Filter Before JOIN
+  severity: high
+  impact: 8
+  description: Reduce rows before join.
+  suggestion: See ClickHouse skill rules/query-join-filter-before.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-join-use-any
+  official_rule: query-join-use-any
+  category: query
+  name: ANY JOIN
+  severity: medium
+  impact: 5
+  description: Use ANY JOIN when one match is enough.
+  suggestion: See ClickHouse skill rules/query-join-use-any.md — not evaluated by
+    drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-join-consider-alternatives
+  official_rule: query-join-consider-alternatives
+  category: query
+  name: JOIN Alternatives
+  severity: medium
+  impact: 5
+  description: Dictionaries / denormalization vs JOIN.
+  suggestion: See ClickHouse skill rules/query-join-consider-alternatives.md — not
+    evaluated by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-join-null-handling
+  official_rule: query-join-null-handling
+  category: query
+  name: JOIN NULL Handling
+  severity: medium
+  impact: 5
+  description: join_use_nulls trade-offs.
+  suggestion: See ClickHouse skill rules/query-join-null-handling.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: query-mv-refreshable
+  official_rule: query-mv-refreshable
+  category: query
+  name: Refreshable Materialized Views
+  severity: medium
+  impact: 5
+  description: Complex joins via refreshable MVs.
+  suggestion: See ClickHouse skill rules/query-mv-refreshable.md — not evaluated by
+    drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: schema-partition-start-without
+  official_rule: schema-partition-start-without
+  category: schema
+  name: Start Without Partitioning
+  severity: low
+  impact: 3
+  description: Consider unpartitioned first.
+  suggestion: See ClickHouse skill rules/schema-partition-start-without.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: insert-async-small-batches
+  official_rule: insert-async-small-batches
+  category: insert
+  name: Async Inserts
+  severity: medium
+  impact: 6
+  description: High-frequency small inserts.
+  suggestion: See ClickHouse skill rules/insert-async-small-batches.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: insert-format-native
+  official_rule: insert-format-native
+  category: insert
+  name: Native Insert Format
+  severity: medium
+  impact: 5
+  description: Native format for throughput.
+  suggestion: See ClickHouse skill rules/insert-format-native.md — not evaluated by
+    drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: agent-connect-mcp
+  official_rule: agent-connect-mcp
+  category: agent
+  name: Agent Connectivity + Formats
+  severity: high
+  impact: 8
+  description: MCP + CLI setup and output formats.
+  suggestion: See ClickHouse skill rules/agent-connect-mcp.md — not evaluated by drover-ch
+    static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: agent-discovery-schema
+  official_rule: agent-discovery-schema
+  category: agent
+  name: Agent Schema Discovery
+  severity: critical
+  impact: 10
+  description: Discover schema before querying.
+  suggestion: See ClickHouse skill rules/agent-discovery-schema.md — not evaluated
+    by drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''
+- id: agent-query-safety
+  official_rule: agent-query-safety
+  category: agent
+  name: Agent Query Safety
+  severity: critical
+  impact: 10
+  description: LIMIT, timeouts, progressive exploration.
+  suggestion: See ClickHouse skill rules/agent-query-safety.md — not evaluated by
+    drover-ch static audit.
+  condition:
+    type: manual_review
+    message_template: ''

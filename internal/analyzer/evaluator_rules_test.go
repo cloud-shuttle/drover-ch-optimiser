@@ -86,6 +86,7 @@ func TestEveryRuleHasHandler(t *testing.T) {
 		"merge_tree_partition_no_ttl": true, "partition_yyyymmdd_churn": true,
 		"json_dynamic_column": true, "incomplete_delete_mutation": true,
 		"insert_batch_rows_too_small": true, "mv_incremental_heuristic": true,
+		"cross_join_unbounded": true, "too_many_columns": true,
 		"manual_review": true,
 	}
 	for _, r := range rules {

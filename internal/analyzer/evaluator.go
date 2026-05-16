@@ -281,6 +281,19 @@ func evaluateRule(rule Rule, tbl *graph.Table, g *graph.Graph) *OptimizationIssu
 		if mvIncrementalHeuristic(tbl) {
 			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{})
 		}
+	case "cross_join_unbounded":
+		if tbl.QueryLogCrossJoinUnbounded >= 4 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count": fmt.Sprintf("%d", tbl.QueryLogCrossJoinUnbounded),
+			})
+		}
+	case "too_many_columns":
+		if n := len(tbl.Columns); n > 80 {
+			msg = replaceTemplate(rule.Condition.MessageTemplate, map[string]string{
+				"Count":     fmt.Sprintf("%d", n),
+				"Threshold": "80",
+			})
+		}
 	case "manual_review":
 		return nil
 	default:

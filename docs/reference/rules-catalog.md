@@ -1,6 +1,6 @@
 # Rules catalog
 
-Rules are embedded in `internal/analyzer/rules.yaml` and aligned with the official [ClickHouse best-practices skill](https://github.com/ClickHouse/agent-skills/tree/main/skills/clickhouse-best-practices) (**31 rule stems**).
+Rules are embedded in `internal/analyzer/rules.yaml` and aligned with the official [ClickHouse best-practices skill](https://github.com/ClickHouse/agent-skills/tree/main/skills/clickhouse-best-practices) (**31 rule stems** plus one Drover extension: **`drover-wide-table`** → **32** YAML entries).
 
 Each rule has an `official_rule` field matching the skill file name (without `.md`). Audit JSON issues include **`official_rule_id`** (same value) next to `rule_id` for agents and docs cross-links.
 
@@ -14,7 +14,7 @@ Columns: **OFFICIAL** (skill stem), **ID** (stable drover id, usually identical)
 
 | Kind | Count | Meaning |
 |------|-------|---------|
-| **Static checks** | 18 | Evaluated from `system.*`, DDL, and `query_log` heuristics |
+| **Static checks** | 19 | Evaluated from `system.*`, DDL, and `query_log` heuristics (incl. unbounded CROSS JOIN signal + wide-table column count) |
 | **manual_review** | 13 | Listed in `drover-ch rules` with skill pointer; no automatic signal in static audit |
 
 Manual rows cover JOIN tuning, async/format insert choices, partition “start without”, refreshable MVs, and **agent** workflow rules — cite `rules/<official_rule>.md` when reviewing manually.
@@ -40,6 +40,8 @@ Manual rows cover JOIN tuning, async/format insert choices, partition “start w
 | `incomplete_delete_mutation` | Incomplete mutations whose command mentions DELETE |
 | `optimize_merge_pressure` | Many active parts and/or frequent `FINAL` in `query_log` |
 | `insert_batch_rows_too_small` | High insert count with low `written_rows` average |
+| `cross_join_unbounded` | `query_log`: `CROSS JOIN` with no `WHERE`/`PREWHERE` in the query text (heuristic) |
+| `too_many_columns` | Table has more than 80 columns (Drover extension `drover-wide-table`) |
 | `manual_review` | Never emits issues; documents skill-only rules |
 
 ## Official references
@@ -49,4 +51,4 @@ Manual rows cover JOIN tuning, async/format insert choices, partition “start w
 
 ## Roadmap
 
-Follow-up heuristics (JOIN parsing, optional **drover-wide-table** extension): see [v1.2 epic](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.beads/issues.jsonl) `drover-ch-019` in Beads.
+Further JOIN heuristics (algorithm choice, ANY, null handling): see [v1.2 follow-up](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.beads/issues.jsonl) `drover-ch-020` in Beads. Shipped in v1.2 (`drover-ch-019`, closed): `query_log` CROSS JOIN triage, **`drover-wide-table`** extension rule.

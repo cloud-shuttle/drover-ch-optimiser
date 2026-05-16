@@ -307,6 +307,7 @@ LIMIT 500
 
 	_ = g.enrichFilterColumns(conn, days, exclude)
 	_ = g.enrichQueryPatterns(conn, days, exclude)
+	_ = g.enrichCrossJoinPatterns(conn, days, exclude)
 	return rows.Err()
 }
 
@@ -462,6 +463,46 @@ LIMIT 500
 		return rows.Err()
 	}
 	return nil
+}
+
+func (g *Graph) enrichCrossJoinPatterns(conn chclient.Querier, days int, exclude ExcludeSet) error {
+	q := `
+SELECT arrayJoin(tables) AS table_full, any(query) AS q, count() AS n
+FROM system.query_log
+WHERE type = 'QueryFinish'
+  AND query_kind = 'Select'
+  AND event_date >= today() - ?
+  AND length(tables) > 0
+  AND positionCaseInsensitive(query, ' CROSS JOIN ') > 0
+GROUP BY table_full, normalized_query_hash
+HAVING n >= 2
+LIMIT 1500
+`
+	ctx := context.Background()
+	rows, err := conn.Query(ctx, q, days)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tableFull, queryText string
+		var n uint64
+		if err := rows.Scan(&tableFull, &queryText, &n); err != nil {
+			return err
+		}
+		if !CrossJoinUnboundedHeuristic(queryText) {
+			continue
+		}
+		key := parseTableRef(tableFull)
+		if !InScope(key, "", exclude) {
+			continue
+		}
+		if node, ok := g.Nodes[key]; ok {
+			node.QueryLogCrossJoinUnbounded += uint32(n)
+		}
+	}
+	return rows.Err()
 }
 
 func classifyNodeTypes(g *Graph) {

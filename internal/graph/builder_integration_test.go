@@ -20,6 +20,11 @@ func TestBuildGraph_Integration(t *testing.T) {
 	for _, q := range []string{
 		"SELECT count() FROM audit_test.events_bad WHERE day >= '2024-01-01' AND status = 'ok'",
 		"SELECT count() FROM audit_test.events_bad PREWHERE status = 'ok' WHERE user_uuid != '00000000-0000-0000-0000-000000000000'",
+		// Warm query_log for CROSS JOIN without WHERE (cross_join_unbounded heuristic).
+		"SELECT count() FROM audit_test.events_bad CROSS JOIN audit_test.events_ok LIMIT 1",
+		"SELECT count() FROM audit_test.events_bad CROSS JOIN audit_test.events_ok LIMIT 1",
+		"SELECT count() FROM audit_test.events_bad CROSS JOIN audit_test.events_ok LIMIT 1",
+		"SELECT count() FROM audit_test.events_bad CROSS JOIN audit_test.events_ok LIMIT 1",
 	} {
 		if err := native.Exec(ctx, q); err != nil {
 			t.Fatalf("warm query_log: %v", err)
@@ -60,6 +65,18 @@ func TestBuildGraph_Integration(t *testing.T) {
 		if !hasDay {
 			t.Errorf("FilterColumns = %v, want day/status from warmed queries", bad.FilterColumns)
 		}
+	}
+
+	if bad != nil && bad.QueryLogCrossJoinUnbounded == 0 {
+		t.Log("QueryLogCrossJoinUnbounded empty (query_log may be disabled); skipping cross-join assertion")
+	} else if bad != nil && bad.QueryLogCrossJoinUnbounded < 4 {
+		t.Errorf("QueryLogCrossJoinUnbounded = %d, want >= 4 from warmed CROSS JOIN queries", bad.QueryLogCrossJoinUnbounded)
+	}
+	ok := g.Nodes[graph.TableKey{Database: testutil.TestDatabase, Name: "events_ok"}]
+	if ok != nil && ok.QueryLogCrossJoinUnbounded == 0 {
+		t.Log("events_ok QueryLogCrossJoinUnbounded empty (query_log may be disabled)")
+	} else if ok != nil && ok.QueryLogCrossJoinUnbounded < 4 {
+		t.Errorf("events_ok QueryLogCrossJoinUnbounded = %d, want >= 4", ok.QueryLogCrossJoinUnbounded)
 	}
 
 	if graph.ShouldAnalyze(graph.TableKey{Database: "audit_test", Name: ".inner_id.x"}, "MergeTree") {

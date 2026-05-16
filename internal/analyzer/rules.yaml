@@ -238,12 +238,12 @@ rules:
   name: Filter Before JOIN
   severity: high
   impact: 8
-  description: Reduce rows before join.
-  suggestion: See ClickHouse skill rules/query-join-filter-before.md — not evaluated
-    by drover-ch static audit.
+  description: Reduce rows before join; avoid unbounded CROSS JOIN in hot paths.
+  suggestion: Prefer PREWHERE/WHERE on driving table, subqueries, or ANY/ASOF joins;
+    see ClickHouse skill rules/query-join-filter-before.md.
   condition:
-    type: manual_review
-    message_template: ''
+    type: cross_join_unbounded
+    message_template: 'query_log: CROSS JOIN without WHERE/PREWHERE (~{{.Count}} weighted queries)'
 - id: query-join-use-any
   official_rule: query-join-use-any
   category: query
@@ -364,3 +364,15 @@ rules:
   condition:
     type: manual_review
     message_template: ''
+- id: drover-wide-table
+  official_rule: drover-wide-table
+  category: schema
+  name: Wide Table (Drover extension)
+  severity: medium
+  impact: 6
+  description: Very wide tables increase memory and merge cost.
+  suggestion: Split into satellite tables, use Nested/JSON sparingly, or project
+    only needed columns in MVs.
+  condition:
+    type: too_many_columns
+    message_template: '{{.Count}} columns (recommended max {{.Threshold}})'

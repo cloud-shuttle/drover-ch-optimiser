@@ -1,3 +1,14 @@
+---
+title: "Comparison with other tools"
+description: "How drover-ch-optimiser compares with other ClickHouse auditing and observability tools."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Comparison with other tools
 
 **Explanation** — where drover-ch-optimiser fits in the ecosystem.

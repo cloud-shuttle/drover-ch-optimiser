@@ -1,3 +1,14 @@
+---
+title: "How to integrate with drover-code"
+description: "Use drover-ch audit output as context for drover-code agents via the bundled command."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: how-to
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # How to integrate with drover-code
 
 **Problem:** You want Drover agents to run ClickHouse audits and act on structured results.
@@ -30,7 +41,7 @@ Agents should parse `CriticalIssues` / `HighIssues` and prioritize by `rule_id` 
 
 ## Drover custom command
 
-This repository ships [`.drover/commands/clickhouse-audit.md`](../../.drover/commands/clickhouse-audit.md). Copy or symlink it into your project’s `.drover/commands/` directory.
+This repository ships [`.drover/commands/clickhouse-audit.md`](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.drover/commands/clickhouse-audit.md). Copy or symlink it into your project’s `.drover/commands/` directory.
 
 ## Security
 

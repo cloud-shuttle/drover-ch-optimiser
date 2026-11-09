@@ -1,3 +1,14 @@
+---
+title: "Tutorial: Your first audit"
+description: "Walk through running and reading your first warehouse audit."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: tutorial
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Tutorial: Your first audit
 
 **Goal:** Understand what the audit report tells you and what to do next.

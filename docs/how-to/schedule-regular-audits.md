@@ -1,3 +1,14 @@
+---
+title: "How to schedule regular audits"
+description: "Run audits on a schedule (cron) and keep the HTML reports."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: how-to
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # How to schedule regular audits
 
 **Problem:** Run warehouse health checks on a schedule (cron, CI, Kubernetes Job) and retain history.

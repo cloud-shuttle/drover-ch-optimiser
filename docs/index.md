@@ -1,3 +1,14 @@
+---
+title: "drover-ch-optimiser Documentation"
+description: "Overview of drover-ch-optimiser, the ClickHouse warehouse auditor and dependency graph visualiser."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # drover-ch-optimiser Documentation
 
 **Intelligent ClickHouse warehouse auditor and dependency graph visualizer.**
@@ -48,5 +59,5 @@ go build -o drover-ch ./cmd/drover-ch
 
 ## Also see
 
-- [DESIGN.md](../DESIGN.md) — implementation design (repo root)
-- [`.beads/issues.jsonl`](../.beads/issues.jsonl) — project backlog
+- [DESIGN.md](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/DESIGN.md) — implementation design (repo root)
+- [`.beads/issues.jsonl`](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.beads/issues.jsonl) — project backlog

@@ -32,6 +32,10 @@ func TestCLI_AuditJSON_Integration(t *testing.T) {
 	if err := testutil.WaitForClickHouse(5 * time.Second); err != nil {
 		t.Skip(err)
 	}
+	// Load testdata/clickhouse/init.sql fixtures if missing (a fresh CI
+	// ClickHouse container has none, so the audit would see zero tables).
+	conn := testutil.OpenConn(t)
+	defer conn.Close()
 
 	bin := buildBinary(t)
 	dir := t.TempDir()
@@ -71,6 +75,10 @@ func TestCLI_AuditHTML_Integration(t *testing.T) {
 	if err := testutil.WaitForClickHouse(5 * time.Second); err != nil {
 		t.Skip(err)
 	}
+	// Load testdata/clickhouse/init.sql fixtures if missing (a fresh CI
+	// ClickHouse container has none, so the audit would see zero tables).
+	conn := testutil.OpenConn(t)
+	defer conn.Close()
 
 	bin := buildBinary(t)
 	dir := t.TempDir()

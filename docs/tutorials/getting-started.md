@@ -1,3 +1,14 @@
+---
+title: "Tutorial: Get started with drover-ch-optimiser"
+description: "Build drover-ch, point it at ClickHouse and run it for the first time."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: tutorial
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Tutorial: Get started with drover-ch-optimiser
 
 **Goal:** Run your first warehouse audit in under five minutes.
@@ -49,7 +60,7 @@ clickhouse:
   secure: false
 ```
 
-Copy from [`.drover/ch-optimiser.example.yaml`](../../.drover/ch-optimiser.example.yaml).
+Copy from [`.drover/ch-optimiser.example.yaml`](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.drover/ch-optimiser.example.yaml).
 
 **Option B — environment variables:**
 

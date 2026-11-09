@@ -1,3 +1,14 @@
+---
+title: "Installation"
+description: "Install drover-ch with go install or from source."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: reference
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Installation
 
 ## Go install

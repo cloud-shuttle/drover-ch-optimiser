@@ -1,8 +1,19 @@
+---
+title: "Architecture"
+description: "How drover-ch-optimiser is structured: collectors, analyzer rules, graph and reporters."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Architecture
 
 **Explanation** — how the system is structured and why.
 
-For implementation detail see [DESIGN.md](../../DESIGN.md). For commands see [CLI reference](../reference/cli-reference.md).
+For implementation detail see [DESIGN.md](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/DESIGN.md). For commands see [CLI reference](../reference/cli-reference.md).
 
 ## Layered pipeline
 

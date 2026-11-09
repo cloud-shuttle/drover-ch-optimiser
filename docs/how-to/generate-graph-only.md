@@ -1,3 +1,14 @@
+---
+title: "How to generate a dependency graph only"
+description: "Produce just the warehouse dependency graph (Mermaid) without a full audit."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: how-to
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # How to generate a dependency graph only
 
 **Problem:** You want a warehouse map (MV chains, query hot paths) without running the full rules engine report.

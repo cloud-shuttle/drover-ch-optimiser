@@ -1,3 +1,14 @@
+---
+title: "CLI reference"
+description: "Commands and flags for the drover-ch binary."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: reference
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # CLI reference
 
 Binary name: **`drover-ch`**  

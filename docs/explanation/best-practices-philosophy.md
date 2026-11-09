@@ -1,3 +1,14 @@
+---
+title: "Best-practices philosophy"
+description: "Why the auditor focuses on the ClickHouse practices with the biggest wins."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Best-practices philosophy
 
 **Explanation** — why this tool exists and how it chooses what to flag.

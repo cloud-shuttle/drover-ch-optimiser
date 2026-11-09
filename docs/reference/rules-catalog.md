@@ -1,3 +1,14 @@
+---
+title: "Rules catalog"
+description: "Catalog of the ClickHouse best-practice rules drover-ch checks."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: reference
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Rules catalog
 
 Rules are embedded in `internal/analyzer/rules.yaml` and aligned with the official [ClickHouse best-practices skill](https://github.com/ClickHouse/agent-skills/tree/main/skills/clickhouse-best-practices) (**31 rule stems** plus one Drover extension: **`drover-wide-table`** → **32** YAML entries).

@@ -1,3 +1,14 @@
+---
+title: "Configuration reference"
+description: "Configuration sources, precedence and settings for drover-ch."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: reference
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Configuration reference
 
 ## Config file

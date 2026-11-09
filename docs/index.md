@@ -1,3 +1,14 @@
+---
+title: "drover-ch-optimiser Documentation"
+description: "Overview of drover-ch-optimiser, the ClickHouse warehouse auditor and dependency graph visualiser."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # drover-ch-optimiser Documentation
 
 **Intelligent ClickHouse warehouse auditor and dependency graph visualizer.**

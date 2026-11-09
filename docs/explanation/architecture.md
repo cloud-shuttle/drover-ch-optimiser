@@ -1,3 +1,14 @@
+---
+title: "Architecture"
+description: "How drover-ch-optimiser is structured: collectors, analyzer rules, graph and reporters."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Architecture
 
 **Explanation** — how the system is structured and why.

@@ -1,3 +1,14 @@
+---
+title: "Output formats reference"
+description: "Structure of the HTML, JSON and Markdown audit outputs."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: reference
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Output formats reference
 
 ## Overview

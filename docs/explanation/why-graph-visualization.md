@@ -1,3 +1,14 @@
+---
+title: "Why graph visualization"
+description: "Why warehouse-wide dependency graphs matter: one bad table design ripples into every downstream view and query."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: explanation
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # Why graph visualization
 
 **Explanation** — why a dependency graph belongs in a schema auditor.

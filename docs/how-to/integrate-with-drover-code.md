@@ -1,3 +1,14 @@
+---
+title: "How to integrate with drover-code"
+description: "Use drover-ch audit output as context for drover-code agents via the bundled command."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: how-to
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # How to integrate with drover-code
 
 **Problem:** You want Drover agents to run ClickHouse audits and act on structured results.

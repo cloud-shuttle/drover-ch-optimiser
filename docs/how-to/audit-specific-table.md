@@ -1,3 +1,14 @@
+---
+title: "How to audit a single hot table"
+description: "Run targeted suggestions for one hot ClickHouse table."
+product: drover-ch-optimiser
+audience: platform-operator
+doc_type: how-to
+topics:
+  - data-warehousing
+surface: repo-docs
+---
+
 # How to audit a single hot table
 
 **Problem:** You need focused recommendations for one high-traffic table without noise from the whole warehouse.

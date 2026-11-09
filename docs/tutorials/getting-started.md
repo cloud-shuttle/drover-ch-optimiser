@@ -49,7 +49,7 @@ clickhouse:
   secure: false
 ```
 
-Copy from [`.drover/ch-optimiser.example.yaml`](../../.drover/ch-optimiser.example.yaml).
+Copy from [`.drover/ch-optimiser.example.yaml`](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.drover/ch-optimiser.example.yaml).
 
 **Option B — environment variables:**
 

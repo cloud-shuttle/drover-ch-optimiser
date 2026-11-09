@@ -48,5 +48,5 @@ go build -o drover-ch ./cmd/drover-ch
 
 ## Also see
 
-- [DESIGN.md](../DESIGN.md) — implementation design (repo root)
-- [`.beads/issues.jsonl`](../.beads/issues.jsonl) — project backlog
+- [DESIGN.md](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/DESIGN.md) — implementation design (repo root)
+- [`.beads/issues.jsonl`](https://github.com/cloud-shuttle/drover-ch-optimiser/blob/main/.beads/issues.jsonl) — project backlog

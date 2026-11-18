@@ -1,5 +1,13 @@
 # drover-ch-optimiser
 
+![Status: active](https://img.shields.io/badge/status-active-2ea44f)
+
+> **Status, checked 18 Nov 2026: ACTIVE.** ClickHouse schema and query auditor with an MCP server (`cmd/drover-ch-mcp`). Tagged v0.1.0. Last change 10 Nov 2026 (CI repair). Outside the gap program.
+>
+> **Clean-clone check:** `go build ./...` and `go test -short ./...` pass.
+>
+> **Roadmap:** [ROADMAP.md](ROADMAP.md). Program tracking: Drover gap program (M0 to M4).
+
 ClickHouse warehouse auditor and dependency-graph visualizer — part of the [Drover](https://github.com/cloud-shuttle) family.
 
 Runs the official [ClickHouse best-practices](https://clickhouse.com/docs/best-practices) rules against your schemas and query history, then produces Markdown, HTML, or JSON reports with an interactive Mermaid graph.
@@ -116,10 +124,10 @@ internal/report        Markdown / HTML / JSON
 
 ## Requirements
 
-- Go 1.23+
+- Go 1.26 (see `go.mod`)
 - ClickHouse with read access to `system.*` and target databases
 - `system.query_log` optional (enables query-weighted edges)
 
 ## License
 
-Apache-2.0 (align with ClickHouse best-practices skill)
+Intended: Apache-2.0. No LICENSE file is committed yet, so this public repo is not yet under an open source licence. Committing one is tracked in an M0 issue.
